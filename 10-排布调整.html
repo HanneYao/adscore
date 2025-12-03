@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广告类型与工种等级评分系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            color: #7f8c8d;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .ad-type-selector {
+            margin-bottom: 10px;
+        }
+
+        .ad-type-selector h2 {
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .ad-type-buttons {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 10px;
+        }
+
+        @media (max-width: 992px) {
+            .ad-type-buttons {
+                grid-template-columns: repeat(6, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .ad-type-buttons {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 576px) {
+            .ad-type-buttons {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .ad-type-btn {
+            padding: 10px 15px;
+            background-color: #ecf0f1;
+            border: 2px solid #bdc3c7;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .ad-type-btn:hover {
+            background-color: #d5dbdb;
+        }
+
+        .ad-type-btn.active {
+            background-color: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+
+        .position-section {
+            margin: 10px 0 20px;
+        }
+
+        .position-controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .position-item {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            border-left: 4px solid #3498db;
+        }
+
+        .position-item.optional {
+            border-left-color: #e74c3c;
+        }
+
+        .position-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .position-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .position-name {
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .position-type {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background-color: #3498db;
+            color: white;
+        }
+
+        .position-type.optional {
+            background-color: #e74c3c;
+        }
+
+        select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+            font-size: 14px;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        select:focus {
+            border-color: #3498db;
+        }
+
+        .price-display {
+            margin-top: 8px;
+            font-size: 14px;
+            color: #e74c3c;
+            font-weight: 500;
+        }
+
+        .visualization {
+            width: 100%;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .distribution-info {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 150px;
+            text-align: center;
+        }
+
+        .info-card h4 {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .bottom-section {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .summary {
+            background-color: #3498db;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .summary h3 {
+            margin-bottom: 10px;
+        }
+
+        .total-price {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .generator-section {
+            background-color: #2ecc71;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 300px;
+            text-align: center;
+        }
+
+        .generator-section h3 {
+            margin-bottom: 15px;
+        }
+
+        .generate-btn {
+            background-color: white;
+            color: #2ecc71;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .generate-btn:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .generated-score {
+            font-size: 36px;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: all 0.5s ease;
+            color: white;
+        }
+
+        .score-explanation {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .score-history {
+            margin-top: 15px;
+            font-size: 14px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .history-item {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .position-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .bottom-section {
+                flex-direction: column;
+            }
+
+            .summary,
+            .generator-section {
+                min-width: 100%;
+            }
+        }
+
+        /* 评分动画效果 */
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        .score-pulse {
+            animation: pulse 0.5s ease;
+        }
+
+        /* 评分颜色分级 - 调整为与绿色背景有良好对比度 */
+        .score-excellent {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(241, 196, 15, 0.8);
+        }
+
+        .score-good {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(46, 204, 113, 0.8);
+        }
+
+        .score-average {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(52, 152, 219, 0.8);
+        }
+
+        .score-poor {
+            color: #fff;
+            text-shadow: 0 0 5px rgba(231, 76, 60, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>广告类型与工种等级评分系统</h1>
+            <p class="description">选择广告类型和工种等级，生成符合概率分布的随机评分</p>
+        </header>
+
+        <div class="content">
+            <!-- 广告类型选择器 -->
+            <div class="ad-type-selector">
+                <h2>选择广告类型</h2>
+                <div class="ad-type-buttons" id="adTypeButtons">
+                    <!-- 广告类型按钮将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 工种选择区域 -->
+            <div class="position-section">
+                <h2 id="positionSectionTitle">工种等级配置</h2>
+                <div class="position-controls" id="positionControls">
+                    <!-- 岗位选择控件将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
+            <!-- 可视化模块 -->
+            <div class="visualization">
+                <h2 class="chart-title">广告效果评分分布预测</h2>
+                <div class="chart-container">
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+
+                <div class="distribution-info">
+                    <div class="info-card">
+                        <h4>预期评分均值 (μ)</h4>
+                        <div class="info-value" id="meanValue">0%</div>
+                    </div>
+                    <div class="info-card">
+                        <h4>预期评分标准差 (σ)</h4>
+                        <div class="info-value" id="stdValue">0%</div>
+                    </div>
+                    <div class="info-card">
+                        <h4>截断范围 (μ±σ)</h4>
+                        <div class="info-value" id="truncRange">0%-0%</div>
+                    </div>
+                    <div class="info-card">
+                        <h4>偏度</h4>
+                        <div class="info-value" id="skewValue">0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 底部区域：费用汇总和评分生成器 -->
+            <div class="bottom-section">
+                <div class="summary">
+                    <h3>费用汇总</h3>
+                    <div class="total-price" id="totalPrice">0 万元</div>
+                    <p>基于当前选择的工种等级计算的总费用</p>
+                </div>
+
+                <div class="generator-section">
+                    <h3>随机评分生成器</h3>
+                    <button id="generateBtn" class="generate-btn">生成随机评分</button>
+                    <div class="generated-score" id="generatedScore">--</div>
+                    <p class="score-explanation">点击按钮生成符合当前分布的随机评分</p>
+                    <div class="score-history" id="scoreHistory">
+                        <!-- 评分历史记录将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 广告类型与工种配置
+        const adTypeConfig = {
+            '视频类': {
+                required: ['导演', '编剧', '视频制作团队'],
+                optional: ['配乐', '明星（出演）', '明星（形象代言）']
+            },
+            '图文类': {
+                required: ['图片设计师/插画师', '文案'],
+                optional: ['明星（形象代言）', '明星（内容创作）']
+            },
+            '动画类': {
+                required: ['导演', '动画制作团队', '编剧'],
+                optional: ['明星（配音）', '配乐']
+            },
+            '声音类': {
+                required: ['配音', '文案'],
+                optional: ['明星（配音）', '配乐']
+            },
+            '带货类': {
+                required: ['直播团队'],
+                optional: ['明星（主播）']
+            },
+            '互动类': {
+                required: ['互动设计师', '互动类制作团队'],
+                optional: ['明星（任意）']
+            },
+            '裂变类': {
+                required: [],
+                optional: ['文案', '明星（内容原点）']
+            },
+            '赞助类': {
+                required: [],
+                optional: []
+            },
+            '植入类': {
+                required: [],
+                optional: []
+            }
+        };
+
+        // 岗位价目表数据
+        const priceTable = {
+            '导演': { 'S': 100, 'A': 20, 'B': 5, 'C': 1 },
+            '编剧': { 'A': 5, 'B': 2, 'C': 0.5 },
+            '视频制作团队': { 'A': 20, 'B': 10, 'C': 5 },
+            '图片设计师/插画师': { 'A': 3, 'B': 1, 'C': 0.2 },
+            '文案': { 'A': 2, 'B': 1, 'C': 0.2 },
+            '动画制作团队': { 'A': 5, 'B': 3, 'C': 1 },
+            '配音': { 'A': 5, 'B': 2, 'C': 0.2 },
+            '直播团队': { 'A': 50, 'B': 10, 'C': 1 },
+            '互动设计师': { 'A': 10, 'B': 5, 'C': 1 },
+            '互动类制作团队': { 'A': 10, 'B': 5, 'C': 1 },
+            '配乐': { 'A': 5, 'B': 2.5, 'C': 0.2 },
+            '明星（出演）': { 'S': 200, 'A': 100, 'B': 50, 'C': 10 },
+            '明星（形象代言）': { 'S': 300, 'A': 150, 'B': 80, 'C': 20 },
+            '明星（配音）': { 'S': 150, 'A': 80, 'B': 40, 'C': 10 },
+            '明星（内容创作）': { 'S': 250, 'A': 120, 'B': 60, 'C': 15 },
+            '明星（主播）': { 'S': 400, 'A': 200, 'B': 100, 'C': 30 },
+            '明星（任意）': { 'S': 200, 'A': 100, 'B': 50, 'C': 10 },
+            '明星（内容原点）': { 'S': 180, 'A': 90, 'B': 45, 'C': 12 }
+        };
+
+        // 岗位权重（用于评分模型）
+        const positionWeights = {
+            '导演': 1.2,
+            '编剧': 1.1,
+            '视频制作团队': 0.8,
+            '图片设计师/插画师': 0.7,
+            '文案': 1.0,
+            '动画制作团队': 0.8,
+            '配音': 0.9,
+            '直播团队': 0.6,
+            '互动设计师': 0.9,
+            '互动类制作团队': 0.8,
+            '配乐': 0.7
+        };
+
+        // 等级映射（S=4, A=3, B=2, C=1）
+        const gradeMap = { 'S': 4, 'A': 3, 'B': 2, 'C': 1 };
+
+        // 当前选择的广告类型
+        let currentAdType = '视频类';
+        // 当前选择的等级
+        let currentSelections = {};
+        // 图表实例
+        let distributionChart = null;
+        // 当前分布参数
+        let currentDistributionParams = null;
+        // 评分历史记录
+        let scoreHistory = [];
+        // 历史记录最大显示数量
+        const maxHistoryItems = 5;
+
+        // 初始化函数
+        function initializeApp() {
+            // 初始化选择状态
+            Object.keys(priceTable).forEach(position => {
+                // 默认选择A级（如果有S级则默认选择S级）
+                const availableGrades = Object.keys(priceTable[position]);
+                const defaultGrade = availableGrades.includes('S') ? 'S' : 'A';
+                currentSelections[position] = defaultGrade;
+            });
+
+            // 生成广告类型选择按钮
+            renderAdTypeButtons();
+
+            // 设置生成按钮事件
+            document.getElementById('generateBtn').addEventListener('click', generateRandomScore);
+
+            // 初始计算
+            updatePositionControls();
+            updateCalculations();
+        }
+
+        // 渲染广告类型选择按钮
+        function renderAdTypeButtons() {
+            const container = document.getElementById('adTypeButtons');
+            container.innerHTML = '';
+
+            Object.keys(adTypeConfig).forEach(type => {
+                const button = document.createElement('div');
+                button.className = 'ad-type-btn';
+                if (type === currentAdType) {
+                    button.classList.add('active');
+                }
+                button.textContent = type;
+                button.addEventListener('click', () => {
+                    // 移除所有按钮的active类
+                    document.querySelectorAll('.ad-type-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                    });
+                    // 添加当前按钮的active类
+                    button.classList.add('active');
+                    // 更新当前广告类型
+                    currentAdType = type;
+                    // 更新工种选择控件
+                    updatePositionControls();
+                    // 更新计算
+                    updateCalculations();
+                });
+
+                container.appendChild(button);
+            });
+        }
+
+        // 更新工种选择控件
+        function updatePositionControls() {
+            const container = document.getElementById('positionControls');
+            container.innerHTML = '';
+
+            // 更新标题
+            document.getElementById('positionSectionTitle').textContent = `${currentAdType} - 工种等级配置`;
+
+            const config = adTypeConfig[currentAdType];
+
+            // 渲染必选工种
+            config.required.forEach(position => {
+                if (priceTable[position]) {
+                    const positionItem = createPositionItem(position, 'required');
+                    container.appendChild(positionItem);
+                }
+            });
+
+            // 渲染可选工种
+            config.optional.forEach(position => {
+                if (priceTable[position]) {
+                    const positionItem = createPositionItem(position, 'optional');
+                    container.appendChild(positionItem);
+                }
+            });
+
+            // 如果没有工种
+            if (config.required.length === 0 && config.optional.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.textContent = '该广告类型无需配置工种';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.padding = '20px';
+                emptyMessage.style.color = '#7f8c8d';
+                container.appendChild(emptyMessage);
+            }
+        }
+
+        // 创建工种选择项
+        function createPositionItem(position, type) {
+            const availableGrades = Object.keys(priceTable[position]);
+            const isRequired = type === 'required';
+
+            const positionItem = document.createElement('div');
+            positionItem.className = `position-item ${type}`;
+
+            const positionHeader = document.createElement('div');
+            positionHeader.className = 'position-header';
+
+            const positionName = document.createElement('div');
+            positionName.className = 'position-name';
+            positionName.textContent = position;
+
+            const positionType = document.createElement('div');
+            positionType.className = `position-type ${type}`;
+            positionType.textContent = isRequired ? '必选' : '可选';
+
+            positionHeader.appendChild(positionName);
+            positionHeader.appendChild(positionType);
+
+            const select = document.createElement('select');
+            select.id = `select-${position}`;
+
+            // 添加等级选项
+            if (!isRequired) {
+                // 可选工种添加"无"选项
+                const noneOption = document.createElement('option');
+                noneOption.value = '无';
+                noneOption.textContent = '无（不包含）';
+                if (currentSelections[position] === '无') {
+                    noneOption.selected = true;
+                }
+                select.appendChild(noneOption);
+            }
+
+            // 添加等级选项
+            availableGrades.forEach(grade => {
+                const option = document.createElement('option');
+                option.value = grade;
+                option.textContent = `${grade}级`;
+                if (currentSelections[position] === grade) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+
+            // 添加变更事件监听
+            select.addEventListener('change', (e) => {
+                currentSelections[position] = e.target.value;
+                updateCalculations();
+            });
+
+            const priceDisplay = document.createElement('div');
+            priceDisplay.className = 'price-display';
+            priceDisplay.id = `price-${position}`;
+
+            // 更新价格显示
+            if (currentSelections[position] === '无') {
+                priceDisplay.textContent = '0 万元';
+            } else {
+                priceDisplay.textContent = `${priceTable[position][currentSelections[position]]} 万元`;
+            }
+
+            positionItem.appendChild(positionHeader);
+            positionItem.appendChild(select);
+            positionItem.appendChild(priceDisplay);
+
+            return positionItem;
+        }
+
+        // 更新所有计算和可视化
+        function updateCalculations() {
+            // 更新各岗位价格显示
+            const config = adTypeConfig[currentAdType];
+            const allPositions = [...config.required, ...config.optional];
+
+            allPositions.forEach(position => {
+                const priceDisplay = document.getElementById(`price-${position}`);
+                if (priceDisplay) {
+                    if (currentSelections[position] === '无') {
+                        priceDisplay.textContent = '0 万元';
+                    } else {
+                        priceDisplay.textContent = `${priceTable[position][currentSelections[position]]} 万元`;
+                    }
+                }
+            });
+
+            // 计算总费用
+            const totalPrice = calculateTotalPrice();
+            document.getElementById('totalPrice').textContent = `${totalPrice} 万元`;
+
+            // 计算评分分布参数
+            currentDistributionParams = calculateDistributionParams();
+
+            // 更新分布信息显示
+            document.getElementById('meanValue').textContent = `${currentDistributionParams.mu.toFixed(1)}%`;
+            document.getElementById('stdValue').textContent = `${currentDistributionParams.sigma.toFixed(1)}%`;
+            document.getElementById('truncRange').textContent =
+                `${Math.max(20, currentDistributionParams.mu - currentDistributionParams.sigma).toFixed(1)}%-${Math.min(200, currentDistributionParams.mu + currentDistributionParams.sigma).toFixed(1)}%`;
+            document.getElementById('skewValue').textContent = currentDistributionParams.skewness.toFixed(2);
+
+            // 更新图表
+            updateDistributionChart(currentDistributionParams);
+        }
+
+        // 计算总费用
+        function calculateTotalPrice() {
+            let total = 0;
+            const config = adTypeConfig[currentAdType];
+            const allPositions = [...config.required, ...config.optional];
+
+            allPositions.forEach(position => {
+                if (currentSelections[position] && currentSelections[position] !== '无') {
+                    total += priceTable[position][currentSelections[position]];
+                }
+            });
+
+            return total;
+        }
+
+        // 计算评分分布参数
+        function calculateDistributionParams() {
+            // 基础参数
+            const baseMu = 89.53;
+            const baseScale = 13.13;
+            const baseSigma = 20;
+
+            // 计算加权平均分数和偏度
+            let weightedScores = [];
+            let skewContributions = [];
+
+            const config = adTypeConfig[currentAdType];
+            const allPositions = [...config.required, ...config.optional];
+
+            allPositions.forEach(position => {
+                if (currentSelections[position] && currentSelections[position] !== '无') {
+                    const grade = currentSelections[position];
+                    const gradeValue = gradeMap[grade];
+                    const weight = positionWeights[position] || 1.0;
+                    const weightedScore = gradeValue * weight;
+
+                    weightedScores.push(weightedScore);
+
+                    // 计算偏度贡献
+                    if (position === '导演') {
+                        skewContributions.push((gradeValue - 2.5) * 2);
+                    } else if (position === '编剧') {
+                        skewContributions.push((gradeValue - 2.5) * 1.5);
+                    } else {
+                        skewContributions.push((gradeValue - 2.5) * 1.0);
+                    }
+                }
+            });
+
+            // 如果没有选择任何岗位，使用默认值
+            const avgScore = weightedScores.length > 0 ?
+                weightedScores.reduce((sum, score) => sum + score, 0) / weightedScores.length : 1.0;
+
+            const skewness = skewContributions.length > 0 ?
+                skewContributions.reduce((sum, contrib) => sum + contrib, 0) / skewContributions.length : 0.0;
+
+            // 计算分布参数
+            const mu = baseMu + baseScale * avgScore;
+            const sigma = Math.max(baseSigma - 2 * avgScore, 5.0);
+
+            return { mu, sigma, skewness, avgScore };
+        }
+
+        // 更新评分分布图表
+        function updateDistributionChart(params) {
+            const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
+
+            // 如果图表已存在，先销毁
+            if (distributionChart) {
+                distributionChart.destroy();
+            }
+
+            // 生成x轴数据（评分范围）
+            const xValues = [];
+            for (let i = 0; i <= 200; i += 2) {
+                xValues.push(i);
+            }
+
+            // 计算概率密度函数（简化版的正态分布）
+            const pdfValues = xValues.map(x => {
+                // 使用偏态正态分布的近似计算
+                const z = (x - params.mu) / params.sigma;
+                const skewFactor = 1 + (params.skewness * z) / Math.sqrt(1 + z * z);
+                return (1 / (params.sigma * Math.sqrt(2 * Math.PI))) *
+                    Math.exp(-0.5 * z * z) * skewFactor;
+            });
+
+            // 计算截断点
+            const lowerBound = Math.max(20, params.mu - params.sigma);
+            const upperBound = Math.min(200, params.mu + params.sigma);
+
+            // 创建数据集，区分截断区域和有效区域
+            const backgroundData = pdfValues.map((value, index) => {
+                const x = xValues[index];
+                return (x < lowerBound || x > upperBound) ? value : NaN;
+            });
+
+            const foregroundData = pdfValues.map((value, index) => {
+                const x = xValues[index];
+                return (x >= lowerBound && x <= upperBound) ? value : NaN;
+            });
+
+            // 创建图表
+            distributionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: xValues,
+                    datasets: [
+                        {
+                            label: '截断区域',
+                            data: backgroundData,
+                            borderColor: 'rgba(231, 76, 60, 0.7)',
+                            backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                            borderWidth: 1,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.4
+                        },
+                        {
+                            label: '有效评分区域 (μ±σ)',
+                            data: foregroundData,
+                            borderColor: 'rgba(46, 204, 113, 0.8)',
+                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
+                            borderWidth: 2,
+                            fill: true,
+                            pointRadius: 0,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: '广告评分 (%)'
+                            },
+                            min: 0,
+                            max: 200
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: '概率密度'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        annotation: {
+                            annotations: {
+                                line1: {
+                                    type: 'line',
+                                    xMin: params.mu,
+                                    xMax: params.mu,
+                                    borderColor: 'rgb(41, 128, 185)',
+                                    borderWidth: 2,
+                                    label: {
+                                        display: true,
+                                        content: `μ = ${params.mu.toFixed(1)}%`,
+                                        position: 'end'
+                                    }
+                                },
+                                line2: {
+                                    type: 'line',
+                                    xMin: lowerBound,
+                                    xMax: lowerBound,
+                                    borderColor: 'rgb(52, 73, 94)',
+                                    borderWidth: 1.5,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        display: true,
+                                        content: `下限: ${lowerBound.toFixed(1)}%`,
+                                        position: 'start'
+                                    }
+                                },
+                                line3: {
+                                    type: 'line',
+                                    xMin: upperBound,
+                                    xMax: upperBound,
+                                    borderColor: 'rgb(52, 73, 94)',
+                                    borderWidth: 1.5,
+                                    borderDash: [5, 5],
+                                    label: {
+                                        display: true,
+                                        content: `上限: ${upperBound.toFixed(1)}%`,
+                                        position: 'start'
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 生成随机评分
+        function generateRandomScore() {
+            if (!currentDistributionParams) {
+                return;
+            }
+
+            const { mu, sigma, skewness } = currentDistributionParams;
+            const lowerBound = Math.max(20, mu - sigma);
+            const upperBound = Math.min(200, mu + sigma);
+
+            // 使用偏态正态分布生成随机数
+            const z = Math.random() + Math.random() + Math.random() - 1.5; // 近似标准正态分布
+            const adjustedZ = z * (1 + (skewness * z) / Math.sqrt(1 + z * z));
+            const score = mu + adjustedZ * sigma;
+
+            // 应用截断
+            const truncatedScore = Math.max(lowerBound, Math.min(upperBound, score));
+            const finalScore = Math.round(truncatedScore * 10) / 10; // 保留一位小数
+
+            // 显示评分
+            const scoreElement = document.getElementById('generatedScore');
+            scoreElement.textContent = `${finalScore}%`;
+            scoreElement.classList.add('score-pulse');
+
+            // 根据评分值设置颜色
+            if (finalScore >= 150) {
+                scoreElement.className = 'generated-score score-excellent';
+            } else if (finalScore >= 120) {
+                scoreElement.className = 'generated-score score-good';
+            } else if (finalScore >= 80) {
+                scoreElement.className = 'generated-score score-average';
+            } else {
+                scoreElement.className = 'generated-score score-poor';
+            }
+
+            // 添加历史记录
+            addToScoreHistory(finalScore);
+
+            // 移除动画类
+            setTimeout(() => {
+                scoreElement.classList.remove('score-pulse');
+            }, 500);
+        }
+
+        // 添加评分到历史记录
+        function addToScoreHistory(score) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            // 添加新记录到数组开头
+            scoreHistory.unshift({
+                score: score,
+                time: timeString
+            });
+
+            // 保持历史记录数量不超过最大值
+            if (scoreHistory.length > maxHistoryItems) {
+                scoreHistory = scoreHistory.slice(0, maxHistoryItems);
+            }
+
+            // 更新历史记录显示
+            updateScoreHistory();
+        }
+
+        // 更新评分历史记录显示
+        function updateScoreHistory() {
+            const historyElement = document.getElementById('scoreHistory');
+            historyElement.innerHTML = '';
+
+            if (scoreHistory.length === 0) {
+                const emptyMessage = document.createElement('div');
+                emptyMessage.textContent = '暂无历史记录';
+                emptyMessage.style.textAlign = 'center';
+                emptyMessage.style.color = 'rgba(255, 255, 255, 0.7)';
+                historyElement.appendChild(emptyMessage);
+                return;
+            }
+
+            scoreHistory.forEach((item, index) => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.textContent = `${item.time} - ${item.score}%`;
+                historyElement.appendChild(historyItem);
+            });
+        }
+
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+
+</html>
