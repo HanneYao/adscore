@@ -797,42 +797,48 @@
         // 更新评分分布图表
         function updateDistributionChart(params) {
             const ctx = document.getElementById('scoreDistributionChart').getContext('2d');
-
+        
             // 如果图表已存在，先销毁
             if (distributionChart) {
                 distributionChart.destroy();
             }
-
+        
             // 生成x轴数据（评分范围）
             const xValues = [];
             for (let i = 0; i <= 200; i += 2) {
                 xValues.push(i);
             }
-
-            // 计算概率密度函数（简化版的正态分布）
+        
+            // 计算概率密度函数（平滑版：非负 + 无生硬拐点 + 贴合原分布）
             const pdfValues = xValues.map(x => {
-                // 使用偏态正态分布的近似计算
                 const z = (x - params.mu) / params.sigma;
-                const skewFactor = 1 + (params.skewness * z) / Math.sqrt(1 + z * z);
-                return (1 / (params.sigma * Math.sqrt(2 * Math.PI))) *
-                    Math.exp(-0.5 * z * z) * skewFactor;
+                // 1. 基础正态分布密度（保留原形态，核心不变）
+                const normalPdf = (1 / (params.sigma * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
+                
+                // 2. 平滑偏度因子（核心优化：用指数衰减替代硬截断，自然衔接）
+                const rawSkewTerm = (params.skewness * z) / (Math.sqrt(1 + z * z) + 1e-6);
+                const smoothSkewTerm = Math.tanh(rawSkewTerm * 0.5); // 平滑限制偏度影响
+                const skewFactor = 1 + smoothSkewTerm; // 始终>0（tanh范围[-1,1] → skewFactor范围[0,2]）
+                
+                // 3. 最终密度（非负 + 平滑衔接 + 保留原分布形态）
+                return normalPdf * skewFactor;
             });
-
+        
             // 计算截断点
             const lowerBound = Math.max(20, params.mu - params.sigma);
             const upperBound = Math.min(200, params.mu + params.sigma);
-
+        
             // 创建数据集，区分截断区域和有效区域
             const backgroundData = pdfValues.map((value, index) => {
                 const x = xValues[index];
                 return (x < lowerBound || x > upperBound) ? value : NaN;
             });
-
+        
             const foregroundData = pdfValues.map((value, index) => {
                 const x = xValues[index];
                 return (x >= lowerBound && x <= upperBound) ? value : NaN;
             });
-
+        
             // 创建图表
             distributionChart = new Chart(ctx, {
                 type: 'line',
@@ -847,7 +853,7 @@
                             borderWidth: 1,
                             fill: true,
                             pointRadius: 0,
-                            tension: 0.4
+                            tension: 0.4 // 保持曲线平滑度
                         },
                         {
                             label: '有效评分区域 (μ±σ)',
@@ -857,7 +863,7 @@
                             borderWidth: 2,
                             fill: true,
                             pointRadius: 0,
-                            tension: 0.4
+                            tension: 0.4 // 曲线平滑度，和原代码一致
                         }
                     ]
                 },
@@ -878,7 +884,11 @@
                                 display: true,
                                 text: '概率密度'
                             },
-                            beginAtZero: true
+                            beginAtZero: true,
+                            // 自动适配y轴范围，避免数值太小看不见
+                            suggestedMax: Math.max(...pdfValues) * 1.2 || 0.01,
+                            // 关闭y轴硬边界，让曲线更自然
+                            grace: '5%' 
                         }
                     },
                     plugins: {
@@ -930,6 +940,13 @@
                                     }
                                 }
                             }
+                        }
+                    },
+                    // 额外优化：让曲线渲染更平滑
+                    elements: {
+                        line: {
+                            capStyle: 'round',
+                            joinStyle: 'round'
                         }
                     }
                 }
